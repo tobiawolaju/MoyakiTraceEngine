@@ -27,6 +27,7 @@ Real-time multi-node block ingestion service for Monad RPC endpoints with reorg 
 ```bash
 npm install
 cp backend/.env.example backend/.env
+# set ServeiceAccuntJson to your Firebase service-account json file path
 npm run dev -w backend
 npm run dev -w frontend
 ```
@@ -72,5 +73,5 @@ Frontend: `http://localhost:5173`
 
 ## Notes
 
-- If Firebase credentials are omitted, backend runs in memory-only mode.
+- Firebase auth is loaded from `ServeiceAccuntJson` (service-account JSON path). If omitted/invalid, backend runs in memory-only mode.
 - `frontend/src/wasmTrace.js` is the hook point for a custom `.wasm` parser/aggregator.

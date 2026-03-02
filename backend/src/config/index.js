@@ -13,9 +13,11 @@ export const config = {
     { nodeId: 'Node3', rpc: process.env.MONAD_NODE3 || 'wss://node3.monad.xyz:8546' }
   ],
   firebase: {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    serviceAccountJsonPath:
+      process.env.ServeiceAccuntJson ||
+      process.env.ServiceAccountJson ||
+      process.env.SERVICE_ACCOUNT_JSON_PATH ||
+      '',
     databaseURL: process.env.FIREBASE_DATABASE_URL
   }
 };
