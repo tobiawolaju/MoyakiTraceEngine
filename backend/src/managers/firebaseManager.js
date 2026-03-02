@@ -13,6 +13,11 @@ function sanitizeForRTDB(input) {
   return input;
 }
 
+function sanitizeKey(key) {
+  // RTDB path tokens cannot contain: . # $ [ ] /
+  return String(key).replace(/[.#$\[\]/]/g, '_');
+}
+
 function loadServiceAccount(path) {
   if (!path) throw new Error('Missing service account path (ServeiceAccuntJson)');
   const raw = fs.readFileSync(path, 'utf8');
@@ -45,16 +50,18 @@ export class FirebaseManager {
 
   async verifyDatabaseConnection() {
     if (!this.db) throw new Error('Firebase not initialized');
-    await this.db.ref('.info/connected').get();
-    await this.db.ref('_healthcheck').set({ ts: Date.now() });
-    await this.db.ref('_healthcheck').remove();
+
+    // Use a normal writable node; `.info/*` is not suitable for Admin SDK health checks.
+    const healthRef = this.db.ref('_healthcheck/bootstrap');
+    await healthRef.set({ ts: Date.now(), ok: true });
+    await healthRef.remove();
   }
 
   async writeBlockBundle(block, tracesByTxHash = {}) {
     if (!this.db) throw new Error('Firebase not initialized');
 
     const updates = {};
-    updates[`/blocks/${block.blockHeight}`] = sanitizeForRTDB({
+    updates[`blocks/${block.blockHeight}`] = sanitizeForRTDB({
       hash: block.hash,
       parentHash: block.parentHash,
       timestamp: block.timestamp,
@@ -64,7 +71,10 @@ export class FirebaseManager {
     });
 
     for (const tx of block.transactions) {
-      updates[`/transactions/${tx.hash}`] = sanitizeForRTDB({
+      const txKey = sanitizeKey(tx.hash);
+
+      updates[`transactions/${txKey}`] = sanitizeForRTDB({
+        txHash: tx.hash,
         blockHeight: block.blockHeight,
         from: tx.from,
         to: tx.to,
@@ -72,7 +82,8 @@ export class FirebaseManager {
         status: tx.status
       });
 
-      updates[`/traces/${tx.hash}`] = sanitizeForRTDB({
+      updates[`traces/${txKey}`] = sanitizeForRTDB({
+        txHash: tx.hash,
         opcodeSummary: tracesByTxHash[tx.hash]?.opcodeSummary ?? {},
         executionMetadata: tracesByTxHash[tx.hash]?.executionMetadata ?? {},
         parallelGroup: tracesByTxHash[tx.hash]?.parallelGroup ?? null
@@ -86,7 +97,7 @@ export class FirebaseManager {
     if (!this.db) throw new Error('Firebase not initialized');
     const updates = {};
     for (let h = fromHeight; h <= toHeight; h += 1) {
-      updates[`/blocks/${h}`] = null;
+      updates[`blocks/${h}`] = null;
     }
     await this.db.ref().update(updates);
   }
