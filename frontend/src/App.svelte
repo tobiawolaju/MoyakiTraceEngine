@@ -59,7 +59,7 @@
 </script>
 
 <main>
-  <h1>Monad Execution Trace Indexer Dashboard</h1>
+  <h1>Execution Trace Timeline</h1>
   <div class="controls">
     <button on:click={() => (paused = !paused)}>{paused ? 'Resume' : 'Pause'} Live</button>
     <button on:click={loadWindow}>Rewind 1h</button>
@@ -71,7 +71,48 @@
 </main>
 
 <style>
-  main { font-family: Inter, system-ui, sans-serif; margin: 1rem; }
-  .controls { display:flex; gap:.5rem; margin-bottom: 1rem; }
-  button { padding: .4rem .7rem; }
+  :global(body) {
+    margin: 0;
+    background:
+      radial-gradient(circle at 10% 0%, #0b3558 0%, transparent 35%),
+      radial-gradient(circle at 100% 100%, #312e81 0%, transparent 40%),
+      #030712;
+  }
+
+  main {
+    min-height: 100vh;
+    box-sizing: border-box;
+    padding: 18px;
+    color: #e2e8f0;
+    font-family: 'Space Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: clamp(1.2rem, 2.8vw, 1.8rem);
+    letter-spacing: 0.01em;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  button {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  @media (max-width: 720px) {
+    main {
+      padding: 12px;
+    }
+  }
 </style>
