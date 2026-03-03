@@ -7,7 +7,7 @@
 Production-style Monad indexing project focused on backend reliability, multi-node consistency checks, and real-time trace visualization.
 </p>
 
-<href>https://monadtraceengine.vercel.app/</href>
+<href link="https://monadtraceengine.vercel.app">Live Demo</href>
 
 ## Why this project
 
