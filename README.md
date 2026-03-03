@@ -1,6 +1,12 @@
-# Monad Execution Trace Indexer
+<p align="center">
+  <img src="./screenshots/logo.png" height="120"/>
+</p>
 
+<h1 align="center">MonadTraceEngine</h1>
+<p align="center">
 Production-style Monad indexing project focused on backend reliability, multi-node consistency checks, and real-time trace visualization.
+</p>
+
 
 ## Why this project
 
