@@ -32,6 +32,10 @@
     return timestamp === block.timestamp ? block : { ...block, timestamp };
   }
 
+  function blockKey(block) {
+    return `${block.nodeId}:${block.hash}`;
+  }
+
   function keepRecent(items) {
     const cutoff = Date.now() - oneMinuteMs;
     return items
@@ -62,13 +66,16 @@
 
   function applyLive(nextBlocks) {
     const addedHashes = [];
+    const indexByKey = new Map(blocks.map((block, index) => [blockKey(block), index]));
     for (const incoming of nextBlocks) {
       const b = normalizeBlock(incoming);
-      const idx = blocks.findIndex((x) => x.hash === b.hash);
+      const key = blockKey(b);
+      const idx = indexByKey.get(key);
       if (idx >= 0) blocks[idx] = b;
       else {
+        indexByKey.set(key, blocks.length);
         blocks.push(b);
-        addedHashes.push(b.hash);
+        addedHashes.push(key);
       }
     }
     blocks = keepRecent(blocks);
@@ -142,8 +149,8 @@
     await loadWindow();
     connectWebSocket();
     pruneTimer = setInterval(pruneOldBlocks, 5000);
-    // Periodic backfill to avoid missed blocks from transient WS drops.
-    syncTimer = setInterval(loadWindow, 15000);
+    // Tight periodic backfill to smooth out inconsistent WS delivery timing.
+    syncTimer = setInterval(loadWindow, 2000);
     return () => {
       shouldReconnect = false;
       clearTimeout(reconnectTimer);

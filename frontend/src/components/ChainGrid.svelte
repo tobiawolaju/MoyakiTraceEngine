@@ -117,7 +117,7 @@
   onMount(() => {
     nowTimer = setInterval(() => {
       nowMs = Date.now();
-    }, 10000);
+    }, 1000);
   });
 
   onDestroy(() => {
@@ -172,7 +172,7 @@
         {#each row.blocks as block (block.hash)}
           <button
             class="block status-{block.status}"
-            class:new-block={highlightedSet.has(block.hash)}
+            class:new-block={highlightedSet.has(`${block.nodeId}:${block.hash}`)}
             style={`left:${block.x - blockWidth / 2}px; width:${blockWidth}px; height:${blockHeight}px; border-radius:${blockRadius}px`}
             title={`${block.nodeId} #${block.blockHeight} (${block.status})`}
             on:click={() => onSelect(block)}
@@ -307,9 +307,6 @@
     height: 4px;
     border-radius: 8px;
     opacity: 0.7;
-    transition:
-      left 220ms ease,
-      width 220ms ease;
   }
 
   .block {
@@ -325,7 +322,6 @@
     justify-content: center;
     padding: 6px 8px;
     transition:
-      left 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
       transform 110ms ease,
       box-shadow 110ms ease,
       opacity 220ms ease;
