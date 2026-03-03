@@ -1,18 +1,35 @@
 export async function extractTrace(provider, txHash, parallelIndex) {
+  const trace = {
+    parallelIndex,
+    threadId: `thread-${parallelIndex % 8}`,
+    parallelGroup: parallelIndex % 8,
+    opcodes: [],
+    internalCalls: [],
+    opcodeSummary: { opcodeCount: 0 },
+    executionMetadata: {}
+  };
+
   try {
-    const trace = await provider.send('debug_traceTransaction', [txHash, { tracer: 'callTracer' }]);
-    return {
-      opcodes: flattenOpcodes(trace),
-      internalCalls: flattenInternalCalls(trace),
-      threadId: `thread-${parallelIndex}`
+    const callTrace = await provider.send('debug_traceTransaction', [txHash, { tracer: 'callTracer' }]);
+    trace.internalCalls = flattenInternalCalls(callTrace);
+    trace.executionMetadata = {
+      from: callTrace?.from ?? null,
+      to: callTrace?.to ?? null,
+      value: callTrace?.value ?? null
     };
   } catch {
-    return {
-      opcodes: [],
-      internalCalls: [],
-      threadId: `thread-${parallelIndex}`
-    };
+    // Keep defaults when call tracing is unavailable.
   }
+
+  try {
+    const vmTrace = await provider.send('debug_traceTransaction', [txHash, {}]);
+    trace.opcodes = flattenOpcodes(vmTrace);
+    trace.opcodeSummary = { opcodeCount: trace.opcodes.length };
+  } catch {
+    // Keep defaults when opcode tracing is unavailable.
+  }
+
+  return trace;
 }
 
 function flattenOpcodes(trace) {
@@ -22,6 +39,14 @@ function flattenOpcodes(trace) {
 
 function flattenInternalCalls(trace) {
   const calls = [];
+  if (trace && typeof trace === 'object' && (trace.from || trace.to || trace.type)) {
+    calls.push({
+      type: trace.type,
+      from: trace.from,
+      to: trace.to,
+      value: trace.value
+    });
+  }
   walk(trace?.calls || [], calls);
   return calls;
 }

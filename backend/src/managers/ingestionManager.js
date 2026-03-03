@@ -1,5 +1,6 @@
 import { TaskQueue } from './queueManager.js';
 import { config } from '../config/index.js';
+import { extractTrace } from '../services/traceService.js';
 
 function toHexHeight(height) {
   return `0x${Number(height).toString(16)}`;
@@ -13,7 +14,11 @@ function normalizeTransaction(tx) {
       to: null,
       value: null,
       status: null,
-      gasUsed: null
+      gasUsed: null,
+      parallelIndex: null,
+      threadId: null,
+      opcodes: [],
+      internalCalls: []
     };
   }
 
@@ -26,7 +31,11 @@ function normalizeTransaction(tx) {
     value: tx.value !== undefined && tx.value !== null ? String(tx.value) : null,
     status: tx.blockHash ? 'confirmed' : null,
     gasUsed: tx.gas ? String(tx.gas) : null,
-    input: tx.input ? String(tx.input) : null
+    input: tx.input ? String(tx.input) : null,
+    parallelIndex: null,
+    threadId: null,
+    opcodes: [],
+    internalCalls: []
   };
 }
 
@@ -50,6 +59,10 @@ function normalizeBlock(nodeId, block) {
 
 function buildTraceStub(tx, index) {
   return {
+    parallelIndex: index,
+    threadId: `thread-${index % 8}`,
+    opcodes: [],
+    internalCalls: [],
     opcodeSummary: {
       approxInputBytes: tx.input ? Math.max(0, (tx.input.length - 2) / 2) : 0,
       opcodeCount: 0
@@ -192,7 +205,33 @@ export class IngestionManager {
     await Promise.all(
       block.transactions.map((tx, index) =>
         this.traceQueue.push(async () => {
-          tracesByTxHash[tx.hash] = buildTraceStub(tx, index);
+          let trace = buildTraceStub(tx, index);
+          try {
+            const extracted = await extractTrace(node.provider, tx.hash, index);
+            trace = {
+              ...trace,
+              ...extracted,
+              opcodeSummary: {
+                ...trace.opcodeSummary,
+                ...(extracted.opcodeSummary || {}),
+                opcodeCount: Array.isArray(extracted.opcodes)
+                  ? extracted.opcodes.length
+                  : trace.opcodeSummary.opcodeCount
+              },
+              executionMetadata: {
+                ...trace.executionMetadata,
+                ...(extracted.executionMetadata || {})
+              }
+            };
+          } catch {
+            // Keep stub trace data when trace extraction fails.
+          }
+
+          tracesByTxHash[tx.hash] = trace;
+          tx.parallelIndex = trace.parallelIndex;
+          tx.threadId = trace.threadId;
+          tx.opcodes = trace.opcodes;
+          tx.internalCalls = trace.internalCalls;
         })
       )
     );

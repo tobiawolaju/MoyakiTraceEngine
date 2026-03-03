@@ -33,14 +33,18 @@
   }
 
   function blockKey(block) {
-    return `${block.nodeId}:${block.hash}`;
+    return `${block?.nodeId || 'unknown'}:${block?.hash || 'unknown'}`;
   }
 
   function keepRecent(items) {
     const cutoff = Date.now() - oneMinuteMs;
-    return items
+    const byKey = new Map();
+    for (const block of items
       .map(normalizeBlock)
-      .filter((b) => b.timestamp >= cutoff);
+      .filter((b) => b.timestamp >= cutoff)) {
+      byKey.set(blockKey(block), block);
+    }
+    return [...byKey.values()];
   }
 
   async function loadWindow() {

@@ -42,11 +42,14 @@
         {#if !block.transactions?.length}
           <div class="tx-empty">No transactions in this block.</div>
         {:else}
-          {#each block.transactions as tx}
+          {#each block.transactions as tx, index}
+            {@const opcodeList = getOpcodeList(tx?.opcodes)}
+            {@const parallelIndex = tx?.parallelIndex ?? index}
+            {@const threadId = tx?.threadId ?? `thread-${parallelIndex}`}
             <div class="tx-card">
               <div><strong>Tx Hash:</strong> {fmt(tx?.txHash || tx?.hash)}</div>
-              <div><strong>Parallel Index:</strong> {fmt(tx?.parallelIndex)} ({fmt(tx?.threadId)})</div>
-              <div><strong>Opcodes:</strong> {getOpcodeList(tx?.opcodes).slice(0, 16).join(', ') || 'N/A'}</div>
+              <div><strong>Parallel Index:</strong> {parallelIndex} ({threadId})</div>
+              <div><strong>Opcodes:</strong> {opcodeList.length ? opcodeList.slice(0, 16).join(', ') : 'Not indexed yet'}</div>
               <div><strong>Internal Calls:</strong> {tx?.internalCalls?.length || 0}</div>
             </div>
           {/each}
