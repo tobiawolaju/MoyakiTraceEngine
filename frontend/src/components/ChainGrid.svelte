@@ -307,6 +307,9 @@
     height: 4px;
     border-radius: 8px;
     opacity: 0.7;
+    transition:
+      left 220ms ease,
+      width 220ms ease;
   }
 
   .block {
@@ -322,8 +325,10 @@
     justify-content: center;
     padding: 6px 8px;
     transition:
+      left 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
       transform 110ms ease,
-      box-shadow 110ms ease;
+      box-shadow 110ms ease,
+      opacity 220ms ease;
     background: #9443ff;
   }
 

@@ -10,6 +10,8 @@
   let reconnectTimer = null;
   let highlightTimer = null;
   let pruneTimer = null;
+  let syncTimer = null;
+  let syncInFlight = false;
   let ws = null;
   let shouldReconnect = true;
   const oneMinuteMs = 60 * 1000;
@@ -38,9 +40,15 @@
   }
 
   async function loadWindow() {
-    const res = await fetch(`${apiBase}/api/blocks`);
-    blocks = keepRecent(await res.json());
-    sortBlocks();
+    if (syncInFlight) return;
+    syncInFlight = true;
+    try {
+      const res = await fetch(`${apiBase}/api/blocks`);
+      blocks = keepRecent(await res.json());
+      sortBlocks();
+    } finally {
+      syncInFlight = false;
+    }
   }
 
   function sortBlocks() {
@@ -107,6 +115,8 @@
 
     ws.onopen = () => {
       reconnectAttempt = 0;
+      // Backfill any blocks missed during reconnect gaps.
+      loadWindow();
     };
 
     ws.onmessage = (event) => {
@@ -132,11 +142,14 @@
     await loadWindow();
     connectWebSocket();
     pruneTimer = setInterval(pruneOldBlocks, 5000);
+    // Periodic backfill to avoid missed blocks from transient WS drops.
+    syncTimer = setInterval(loadWindow, 15000);
     return () => {
       shouldReconnect = false;
       clearTimeout(reconnectTimer);
       clearTimeout(highlightTimer);
       clearInterval(pruneTimer);
+      clearInterval(syncTimer);
       ws?.close();
     };
   });
