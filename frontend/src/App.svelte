@@ -26,7 +26,7 @@
   const apiBase =
     import.meta.env.VITE_API_BASE ||
     `${window.location.protocol}//${window.location.hostname}:8080`;
-  const wsBase = apiBase.replace(/^http/i, 'ws');
+  const wsBase = 'wss://monadtraceengine-701630203313.europe-west1.run.app';
   const wsPath = import.meta.env.VITE_WS_PATH || '/ws';
 
   function toMsTimestamp(value) {
