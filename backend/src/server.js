@@ -54,112 +54,13 @@ async function bootstrap() {
   app.use(cors());
   app.use(express.json());
 
-  const server = http.createServer(app);
-  const wsHub = new WsHub(server, { path: config.wsPath, broadcastWindowMs: config.broadcastWindowMs });
-
-  const ingestionManager = new IngestionManager({
-    rpcManager,
-    firebaseManager,
-    reorgManager,
-    metrics,
-    onCanonicalBlock: (block) => wsHub.enqueue(block)
+  // We listen before awaiting ingestion.startIngestion() to satisfy Cloud Run health checks.
+  server.listen(config.port, '0.0.0.0', () => {
+    log('server.ready', { url: `http://0.0.0.0:${config.port}`, port: config.port });
   });
 
   await ingestionManager.startIngestion();
   log('ingestion.started', { nodes: config.nodes.map((n) => n.nodeId) });
-
-  app.use((req, _res, next) => {
-    metrics.apiRequests += 1;
-    next();
-  });
-
-  app.get('/health', (_req, res) => {
-    res.json({ ok: true, uptimeSec: Math.round((Date.now() - metrics.startedAt) / 1000) });
-  });
-
-  app.get('/metrics', (_req, res) => {
-    res.json({
-      ...metrics,
-      queueDepths: Object.fromEntries(
-        [...ingestionManager.blockQueues.entries()].map(([nodeId, q]) => [nodeId, { depth: q.depth, paused: q.paused }])
-      ),
-      traceQueueDepth: ingestionManager.traceQueue.depth
-    });
-  });
-
-  app.get('/api/blocks', (req, res) => {
-    const { nodeId, status } = req.query;
-    const fromHeight = parseNumber(req.query.fromHeight, { min: 0 });
-    const toHeight = parseNumber(req.query.toHeight, { min: 0 });
-    const limit = parseNumber(req.query.limit, { min: 1, max: 2000 });
-    const fromTs = parseNumber(req.query.fromTs, { min: 0 });
-    const toTs = parseNumber(req.query.toTs, { min: 0 });
-    if ((req.query.fromHeight && fromHeight === null) || (req.query.toHeight && toHeight === null)) {
-      return res.status(400).json({ error: 'Invalid fromHeight/toHeight query values' });
-    }
-    if ((req.query.fromTs && fromTs === null) || (req.query.toTs && toTs === null)) {
-      return res.status(400).json({ error: 'Invalid fromTs/toTs query values' });
-    }
-    if (fromHeight !== null && toHeight !== null && fromHeight > toHeight) {
-      return res.status(400).json({ error: 'fromHeight must be <= toHeight' });
-    }
-    if (fromTs !== null && toTs !== null && fromTs > toTs) {
-      return res.status(400).json({ error: 'fromTs must be <= toTs' });
-    }
-
-    const blocks = ingestionManager.getWindowBlocks().filter((b) => {
-      if (nodeId && b.nodeId !== nodeId) return false;
-      if (status && b.status !== status) return false;
-      if (fromHeight !== null && b.blockHeight < fromHeight) return false;
-      if (toHeight !== null && b.blockHeight > toHeight) return false;
-      if (fromTs !== null && b.timestamp < fromTs) return false;
-      if (toTs !== null && b.timestamp > toTs) return false;
-      return true;
-    });
-    return res.json(limit ? blocks.slice(-limit) : blocks);
-  });
-
-  app.get('/api/blocks/latest', (_req, res) => {
-    return res.json(ingestionManager.getLatestBlocksByNode());
-  });
-
-  app.get('/api/blocks/:hash', (req, res) => {
-    const block = ingestionManager.getBlockByHash(req.params.hash);
-    if (!block) return res.status(404).json({ error: 'Block not found' });
-    return res.json(block);
-  });
-
-  app.get('/api/transactions/:txHash', (req, res) => {
-    const tx = ingestionManager.getTransaction(req.params.txHash);
-    if (!tx) return res.status(404).json({ error: 'Transaction not found' });
-    return res.json(tx);
-  });
-
-  app.get('/api/nodes', (_req, res) => {
-    return res.json(ingestionManager.getNodeStatuses());
-  });
-
-  app.get('/api/network/overview', (_req, res) => {
-    return res.json(ingestionManager.getNetworkOverview());
-  });
-
-  app.get('/api/blocks/history', async (req, res) => {
-    const beforeTs = parseNumber(req.query.beforeTs, { min: 1 });
-    const limit = parseNumber(req.query.limit, { min: 1, max: 1000 }) || 200;
-    if (beforeTs === null) return res.status(400).json({ error: 'Invalid beforeTs query value' });
-
-    try {
-      const blocks = await firebaseManager.loadHistoricalBlocks({ beforeTs, limit });
-      return res.json(blocks);
-    } catch (error) {
-      metrics.firebaseErrors += 1;
-      return res.status(503).json({ error: 'Historical blocks unavailable', message: error.message });
-    }
-  });
-
-  server.listen(config.port, () => {
-    log('server.ready', { url: `http://localhost:${config.port}` });
-  });
 
   const metricTimer = setInterval(() => {
     log('metrics.minute', {
@@ -188,6 +89,12 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  console.error(JSON.stringify({ level: 'error', event: 'bootstrap.failed', message: error.message }));
+  console.error('BOOTSTRAP_FATAL_ERROR:', error);
+  console.error(JSON.stringify({ 
+    level: 'error', 
+    event: 'bootstrap.failed', 
+    message: error.message,
+    stack: error.stack
+  }));
   process.exit(1);
 });
