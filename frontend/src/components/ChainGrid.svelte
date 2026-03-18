@@ -94,7 +94,7 @@
   $: minTime = Math.min(dataMinTs, nowMs - visibleWindowMs);
   $: maxTime = Math.max(dataMaxTs, nowMs);
   $: spanMs = Math.max(visibleWindowMs, maxTime - minTime);
-  $: timelineWidth = Math.max(1200, Math.round((spanMs / 1000) * 80)); // 80px per second for better visibility
+  $: timelineWidth = Math.max(1200, Math.round((spanMs / 1000) * 20)); // 20px per second is safe for 25+ minutes
   $: toX = (timestamp) => ((timestamp - minTime) / spanMs) * timelineWidth;
 
   $: if (isFollowingLive && scroller && blocks.length !== lastKnownBlockCount) {
@@ -114,71 +114,87 @@
     if (!chartCanvas) return;
     if (chartInstance) chartInstance.destroy();
 
-    const ctx = chartCanvas.getContext('2d');
+    const backgroundPlugin = {
+      id: "customBackground",
+      beforeDraw: (chart) => {
+        const { ctx, width, height } = chart;
+        ctx.save();
+        ctx.fillStyle = "#09090b";
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+      },
+    };
+
+    const ctx = chartCanvas.getContext("2d");
     chartInstance = new Chart(ctx, {
-      type: 'bar',
+      type: "bar",
+      plugins: [backgroundPlugin],
       data: {
-        datasets: []
+        datasets: [],
       },
       options: {
         responsive: false,
         maintainAspectRatio: false,
         animation: false,
-        layout: { padding: { top: 20, bottom: 20 } },
+        layout: { padding: { top: 14, bottom: 14 } },
         scales: {
-          x: { 
-            display: false, 
-            type: 'linear', 
-            min: minTime, 
-            max: maxTime 
+          x: {
+            display: false,
+            type: "linear",
+            min: minTime,
+            max: maxTime,
           },
-          y: { 
-            display: true, 
-            type: 'linear', 
-            min: -0.5, 
-            max: nodeIds.length - 0.5, 
+          y: {
+            display: true,
+            type: "linear",
+            min: -0.5,
+            max: nodeIds.length - 0.5,
             reverse: true,
             ticks: { display: false },
             grid: {
-              color: 'rgba(63, 63, 70, 0.4)',
+              color: "rgba(168, 85, 247, 0.15)",
               drawBorder: false,
-              lineWidth: 1
-            }
-          }
+              lineWidth: 1,
+            },
+          },
         },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(18, 18, 20, 0.98)',
-            titleColor: '#a855f7',
-            bodyColor: '#fafafa',
-            borderColor: 'rgba(168, 85, 247, 0.4)',
+            backgroundColor: "rgba(9, 9, 11, 0.95)",
+            titleColor: "#a855f7",
+            bodyColor: "#ffffff",
+            borderColor: "rgba(168, 85, 247, 0.3)",
             borderWidth: 1,
             padding: 12,
-            cornerRadius: 12,
+            cornerRadius: 10,
             callbacks: {
               label: (ctx) => {
                 const b = ctx.raw.block;
                 if (!b) return null;
                 return [
                   `Block #${b.blockHeight}`,
-                  `Hash: ${b.hash.slice(0, 12)}...`,
                   `Transactions: ${b.transactions?.length || 0}`,
-                  `Status: ${b.status}`
+                  `Status: ${b.status}`,
                 ];
-              }
-            }
-          }
+              },
+            },
+          },
         },
         onClick: (event) => {
-          const points = chartInstance.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+          const points = chartInstance.getElementsAtEventForMode(
+            event,
+            "nearest",
+            { intersect: true },
+            true
+          );
           if (points.length) {
             const { datasetIndex, index } = points[0];
             const b = chartInstance.data.datasets[datasetIndex].data[index].block;
             if (b) onSelect(b);
           }
-        }
-      }
+        },
+      },
     });
   }
 
