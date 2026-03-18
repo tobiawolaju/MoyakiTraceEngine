@@ -25,8 +25,8 @@
   let shouldReconnect = true;
   let showSplash = true;
 
-  const apiBase = 'https://monadtraceengine-701630203313.europe-west1.run.app';
-  const wsBase = 'wss://monadtraceengine-701630203313.europe-west1.run.app';
+  const apiBase = 'https://moyakitraceengine-701630203313.europe-west1.run.app';
+  const wsBase = 'wss://moyakitraceengine-701630203313.europe-west1.run.app';
   const wsPath = '/ws';
 
   function toMsTimestamp(value) {
