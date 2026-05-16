@@ -24,70 +24,81 @@
 </script>
 
 {#if block}
-  <div class="overlay" role="button" tabindex="0" on:click={onClose} on:keydown={(e) => e.key === 'Escape' && onClose()}>
+  <div
+    class="overlay"
+    role="dialog"
+    aria-modal="true"
+    tabindex="0"
+    on:click={onClose}
+    on:keydown={(e) => e.key === 'Escape' && onClose()}
+  >
     <div class="modal" on:click|stopPropagation>
-      <button class="close-btn" on:click={onClose} aria-label="Close modal">&times;</button>
       <div class="modal-head">
-        <div>
+        <div class="modal-head-copy">
           <p class="eyebrow">Execution detail</p>
           <h3>Block {fmt(block.blockHeight)}</h3>
         </div>
-        <span class={`status-chip ${block.status === 'canonical' ? 'good' : block.status === 'pending' ? 'warn' : 'bad'}`}>
-          {fmt(block.status)}
-        </span>
-      </div>
-
-      <div class="meta-grid">
-        <div>
-          <strong>Node</strong>
-          <span>{fmt(block.nodeId)}</span>
-        </div>
-        <div>
-          <strong>Block Number</strong>
-          <span>{fmt(block.blockHeight)}</span>
-        </div>
-        <div>
-          <strong>Status</strong>
-          <span>{fmt(block.status)}</span>
-        </div>
-        <div>
-          <strong>Timestamp</strong>
-          <span>{fmtTimestamp(block.timestamp)}</span>
-        </div>
-        <div class="full">
-          <strong>Hash</strong>
-          <span>{fmt(block.hash)}</span>
-        </div>
-        <div class="full">
-          <strong>Parent Hash</strong>
-          <span>{fmt(block.parentHash)}</span>
-        </div>
-        <div>
-          <strong>Transactions</strong>
-          <span>{block.transactions?.length || 0}</span>
+        <div class="modal-head-actions">
+          <span class={`status-chip ${block.status === 'canonical' ? 'good' : block.status === 'pending' ? 'warn' : 'bad'}`}>
+            {fmt(block.status)}
+          </span>
+          <button class="close-btn" on:click={onClose} aria-label="Close modal">&times;</button>
         </div>
       </div>
 
-      <h4>Transactions</h4>
-      <div class="tx-list">
-        {#if !block.transactions?.length}
-          <div class="tx-empty">No transactions in this block.</div>
-        {:else}
-          {#each block.transactions as tx, index}
-            {@const opcodeList = getOpcodeList(tx?.opcodes)}
-            {@const parallelIndex = tx?.parallelIndex ?? index}
-            {@const threadId = tx?.threadId ?? `thread-${parallelIndex}`}
-            <div class="tx-card">
-              <div class="tx-line"><strong>Tx Hash</strong><span>{fmt(tx?.txHash || tx?.hash)}</span></div>
-              <div class="tx-line"><strong>Parallel Index</strong><span>{parallelIndex} ({threadId})</span></div>
-              <div class="tx-line">
-                <strong>Opcodes</strong>
-                <span>{opcodeList.length ? opcodeList.slice(0, 16).join(', ') : 'Not indexed yet'}</span>
+      <div class="modal-body">
+        <div class="meta-grid">
+          <div>
+            <strong>Node</strong>
+            <span>{fmt(block.nodeId)}</span>
+          </div>
+          <div>
+            <strong>Block Number</strong>
+            <span>{fmt(block.blockHeight)}</span>
+          </div>
+          <div>
+            <strong>Status</strong>
+            <span>{fmt(block.status)}</span>
+          </div>
+          <div>
+            <strong>Timestamp</strong>
+            <span>{fmtTimestamp(block.timestamp)}</span>
+          </div>
+          <div class="full">
+            <strong>Hash</strong>
+            <span>{fmt(block.hash)}</span>
+          </div>
+          <div class="full">
+            <strong>Parent Hash</strong>
+            <span>{fmt(block.parentHash)}</span>
+          </div>
+          <div>
+            <strong>Transactions</strong>
+            <span>{block.transactions?.length || 0}</span>
+          </div>
+        </div>
+
+        <h4>Transactions</h4>
+        <div class="tx-list">
+          {#if !block.transactions?.length}
+            <div class="tx-empty">No transactions in this block.</div>
+          {:else}
+            {#each block.transactions as tx, index}
+              {@const opcodeList = getOpcodeList(tx?.opcodes)}
+              {@const parallelIndex = tx?.parallelIndex ?? index}
+              {@const threadId = tx?.threadId ?? `thread-${parallelIndex}`}
+              <div class="tx-card">
+                <div class="tx-line"><strong>Tx Hash</strong><span>{fmt(tx?.txHash || tx?.hash)}</span></div>
+                <div class="tx-line"><strong>Parallel Index</strong><span>{parallelIndex} ({threadId})</span></div>
+                <div class="tx-line">
+                  <strong>Opcodes</strong>
+                  <span>{opcodeList.length ? opcodeList.slice(0, 16).join(', ') : 'Not indexed yet'}</span>
+                </div>
+                <div class="tx-line"><strong>Internal Calls</strong><span>{tx?.internalCalls?.length || 0}</span></div>
               </div>
-              <div class="tx-line"><strong>Internal Calls</strong><span>{tx?.internalCalls?.length || 0}</span></div>
-            </div>
-          {/each}
-        {/if}
+            {/each}
+          {/if}
+        </div>
       </div>
     </div>
   </div>
