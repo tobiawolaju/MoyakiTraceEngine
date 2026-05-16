@@ -210,6 +210,17 @@ What to expect:
 
 ---
 
+
+## Render Deployment (Backend)
+
+If you deploy only the backend on Render, use these settings:
+
+- **Root Directory:** `backend`
+- **Build Command:** `pnpm install`
+- **Start Command:** `npm start`
+
+Important: `npm build` is not a valid npm command. If you need to run a build script, use `npm run build`.
+
 ## Local Testing
 
 There is no dedicated automated test suite in the repo yet, so the recommended local validation is a smoke test:
