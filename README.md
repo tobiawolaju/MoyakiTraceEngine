@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo (20260516083815).png" height="120"/>
+  <img src="logo.png" height="120"/>
 </p>
 
 <h1 align="center">Moyaki Trace Engine</h1>
