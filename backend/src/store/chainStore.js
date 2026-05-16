@@ -1,5 +1,4 @@
 import { config } from '../config/index.js';
-import { persistBlock, removeBlock } from '../services/firebase.js';
 
 export class ChainStore {
   constructor() {
@@ -29,8 +28,6 @@ export class ChainStore {
     chain.push(block);
     if (!this.heightIndex.has(block.blockHeight)) this.heightIndex.set(block.blockHeight, []);
     this.heightIndex.get(block.blockHeight).push(block);
-
-    await persistBlock(block);
     await this.evictOldBlocks();
 
     return block;
@@ -41,8 +38,6 @@ export class ChainStore {
     while (chain.length && chain[chain.length - 1].hash !== parentHash) {
       const removed = chain.pop();
       removed.status = 'rolled-back';
-      await persistBlock(removed);
-      await removeBlock(removed);
     }
   }
 
@@ -50,8 +45,7 @@ export class ChainStore {
     const cutoff = Date.now() - config.keepWindowMs;
     for (const [nodeId, chain] of this.nodeBlocks.entries()) {
       while (chain.length && chain[0].timestamp < cutoff) {
-        const old = chain.shift();
-        await removeBlock(old);
+        chain.shift();
       }
       this.nodeBlocks.set(nodeId, chain.slice(-config.rollbackWindow));
     }

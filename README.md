@@ -16,13 +16,11 @@ Web-based multi-node blockchain indexing engine for Monad mainnet with reorg det
 
 ## Overview
 
-MoyakiTraceEngine is a backend-focused blockchain infrastructure project designed to demonstrate production-grade ingestion, reliability engineering, and real-time observability.
+MoyakiTraceEngine is a blockchain ingestion and trace-streaming project for Monad RPC endpoints.
 
-It ingests blocks from multiple RPC nodes, detects consensus divergence, handles reorg rollbacks, extracts execution traces, and streams normalized data to a live frontend dashboard.
+It ingests blocks from multiple nodes, detects consensus divergence, handles reorg rollbacks, extracts execution traces, and streams normalized data to a live dashboard.
 
 The backend keeps its working state and historical window in memory, so it does not require a third-party database to run.
-
-This project emphasizes backend system design rather than frontend presentation.
 
 ---
 
@@ -62,13 +60,13 @@ flowchart LR
     RM[RpcManager + RateLimiter]
     IM[IngestionManager]
     RGM[ReorgManager]
-    STORE[(Rolling in-memory history store)]
+    STORE[(Rolling in-memory store)]
     API[REST API]
     WS[WsHub]
   end
 
-  subgraph FE[Frontend - Svelte]
-    OV[Network Overview]
+  subgraph FE[Frontend - Svelte / Vite]
+    OV[Dashboard]
     CG[Chain Grid]
     MD[Block Modal]
   end
@@ -87,6 +85,15 @@ flowchart LR
   WS --> CG
   CG --> MD
 ```
+
+### Runtime Flow
+
+1. The backend connects to the configured Monad RPC nodes.
+2. `RpcManager` applies per-node rate limiting and retry logic.
+3. `IngestionManager` processes blocks, traces, and reorg-aware updates.
+4. The in-memory store keeps a rolling block window for API reads and history backfill.
+5. The REST API serves block and network snapshots from retained state.
+6. The WebSocket hub streams canonical block updates to the frontend.
 
 ---
 
@@ -198,6 +205,12 @@ Services:
 * Backend -> [http://localhost:8080](http://localhost:8080)
 * Frontend -> [http://localhost:5173](http://localhost:5173)
 
+Note:
+
+* The frontend now defaults to `http://localhost:8080` and `ws://localhost:8080`.
+* Copy `backend/sample.env` to `backend/.env` and set your Monad RPC URLs before starting the backend.
+* Copy `frontend/sample.env` to `frontend/.env` if you want to override the local API or WebSocket URLs.
+
 ---
 
 ## Usage
@@ -219,6 +232,7 @@ What to expect:
 * Backend serves the API on `http://localhost:8080`
 * Frontend serves the UI on `http://localhost:5173`
 * The backend keeps its current window in memory, so restarting it clears the retained block history
+* The frontend points at the local backend by default unless you change it
 
 ---
 
@@ -266,13 +280,13 @@ Notes:
 
 * The project does not require a third-party database to start locally.
 * The live indexing data depends on external Monad RPC availability, so the UI can still load even if the chain data is sparse or delayed.
-* If one RPC node is unreachable, the backend now disables that node temporarily instead of crashing.
+* If one RPC node is unreachable, set the corresponding `MONAD_NODE*` environment variable to a working endpoint.
 
 ### Troubleshooting
 
-* If you see `ENOTFOUND` for `node3.monad.xyz`, that node is unavailable from your network or the default endpoint is not resolvable.
-* You can still run the backend and frontend with the remaining nodes.
-* To use your own endpoints, set `MONAD_NODE1`, `MONAD_NODE2`, and `MONAD_NODE3` in the backend environment before starting the app.
+* If you see `ENOTFOUND` for `node3.monad.xyz`, set `MONAD_NODE3` to a working WebSocket RPC endpoint.
+* To use your own endpoints, edit `backend/.env` after copying from `backend/sample.env`.
+* If the frontend cannot reach the backend, confirm `frontend/.env` points to the same host and port as the backend.
 
 ---
 

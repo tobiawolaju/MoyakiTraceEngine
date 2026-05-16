@@ -34,7 +34,7 @@ async function bootstrap() {
   const firebaseManager = new FirebaseManager();
   await firebaseManager.initFirebase();
   await firebaseManager.verifyDatabaseConnection();
-  log('firebase.ready');
+  log('storage.ready', { mode: 'in-memory' });
 
   const rpcManager = new RpcManager(config.nodes, metrics);
   const reorgManager = new ReorgManager({

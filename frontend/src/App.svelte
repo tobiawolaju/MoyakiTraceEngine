@@ -25,9 +25,9 @@
   let shouldReconnect = true;
   let showSplash = true;
 
-  const apiBase = 'https://moyakitraceengine-701630203313.europe-west1.run.app';
-  const wsBase = 'wss://moyakitraceengine-701630203313.europe-west1.run.app';
-  const wsPath = '/ws';
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  const wsBase = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080';
+  const wsPath = import.meta.env.VITE_WS_PATH || '/ws';
 
   function toMsTimestamp(value) {
     const numeric = Number(value);
