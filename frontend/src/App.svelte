@@ -32,6 +32,14 @@
   const fallbackApiBase = 'https://moyakitraceengine.onrender.com';
   const fallbackWsBase = 'wss://moyakitraceengine.onrender.com';
   const wsPath = import.meta.env.VITE_WS_PATH || '/ws';
+  const liveWindowMs = Math.max(
+    30_000,
+    Number(import.meta.env.VITE_VISIBLE_WINDOW_MS || 2 * 60 * 1000)
+  );
+  const maxRetainedBlocks = Math.max(
+    500,
+    Number(import.meta.env.VITE_MAX_RETAINED_BLOCKS || 4000)
+  );
   let apiBase = localApiBase;
   let wsBase = localWsBase;
 
@@ -72,7 +80,11 @@
     for (const block of items.map(normalizeBlock)) {
       byKey.set(blockKey(block), block);
     }
-    return [...byKey.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-15000);
+    const cutoff = Date.now() - liveWindowMs;
+    return [...byKey.values()]
+      .filter((block) => block.timestamp >= cutoff)
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(-maxRetainedBlocks);
   }
 
   async function loadWindow() {

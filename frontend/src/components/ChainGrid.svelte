@@ -21,7 +21,10 @@
     "rolled-back": "#f97316",
   };
   let rowHeight = 96;
-  const visibleWindowMs = 60 * 1000;
+  const visibleWindowMs = Math.max(
+    30_000,
+    Number(import.meta.env.VITE_VISIBLE_WINDOW_MS || 2 * 60 * 1000)
+  );
   const targetTickCount = 9;
   const tickStepsMs = [
     5000, 10000, 15000, 30000, 60000, 120000, 300000, 600000, 900000, 1800000,
@@ -347,6 +350,5 @@
     cursor: crosshair;
   }
 </style>
-
 
 
