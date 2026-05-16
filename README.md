@@ -5,7 +5,7 @@
 <h1 align="center">MoyakiTraceEngine</h1>
 
 <p align="center">
-Webbased multi-node blockchain indexing engine for Monad mainet with reorg detection, rate-limit resilience, and real-time execution trace streaming.
+Web-based multi-node blockchain indexing engine for Monad mainnet with reorg detection, rate-limit resilience, and real-time execution trace streaming.
 </p>
 
 <p align="center">
@@ -20,6 +20,8 @@ MoyakiTraceEngine is a backend-focused blockchain infrastructure project designe
 
 It ingests blocks from multiple RPC nodes, detects consensus divergence, handles reorg rollbacks, extracts execution traces, and streams normalized data to a live frontend dashboard.
 
+The backend keeps its working state and historical window in memory, so it does not require a third-party database to run.
+
 This project emphasizes backend system design rather than frontend presentation.
 
 ---
@@ -32,7 +34,7 @@ This project emphasizes backend system design rather than frontend presentation.
 - Queue-based backpressure control
 - Per-node rate limiting with retry/backoff
 - Real-time WebSocket streaming architecture
-- Atomic multi-path writes to Firebase RTDB
+- Rolling in-memory block and transaction state
 - Modular backend system design
 
 ---
@@ -60,16 +62,9 @@ flowchart LR
     RM[RpcManager + RateLimiter]
     IM[IngestionManager]
     RGM[ReorgManager]
-    FBM[FirebaseManager]
+    STORE[(Rolling in-memory history store)]
     API[REST API]
     WS[WsHub]
-    MEM[(In-memory block window)]
-  end
-
-  subgraph DB[Firebase RTDB]
-    B[(blocks)]
-    T[(transactions)]
-    TR[(traces)]
   end
 
   subgraph FE[Frontend - Svelte]
@@ -83,18 +78,15 @@ flowchart LR
   N3 --> RM
   RM --> IM
   IM --> RGM
-  IM --> MEM
-  IM --> FBM
-  FBM --> B
-  FBM --> T
-  FBM --> TR
-  MEM --> API
-  MEM --> WS
+  IM --> STORE
+  RGM --> STORE
+  STORE --> API
+  STORE --> WS
   API --> OV
   API --> CG
   WS --> CG
   CG --> MD
-````
+```
 
 ---
 
@@ -123,12 +115,12 @@ flowchart LR
 * Automatic rollback callbacks on divergence
 * Re-index support for corrected chain segments
 
-### FirebaseManager
+### Rolling In-Memory Store
 
-* Atomic multi-path updates
-* Sanitized RTDB-safe keys
-* Batched writes for performance
-* Fault-tolerant persistence layer
+* Keeps a rolling window of canonical blocks in memory
+* Supports rollback pruning on reorg events
+* Serves the `/api/blocks/history` endpoint from retained history
+* Requires no external database service at runtime
 
 ---
 
@@ -144,6 +136,7 @@ flowchart LR
 * `GET /api/blocks`
 * `GET /api/blocks/latest`
 * `GET /api/blocks/:hash`
+* `GET /api/blocks/history`
 
 Query parameters:
 
@@ -168,8 +161,8 @@ Query parameters:
 
 Endpoint:
 
-```
-ws://localhost:4000/ws
+```text
+ws://localhost:8080/ws
 ```
 
 Events:
@@ -202,24 +195,26 @@ npm run dev
 
 Services:
 
-* Backend → [http://localhost:4000](http://localhost:4000)
-* Frontend → [http://localhost:5173](http://localhost:5173)
+* Backend -> [http://localhost:8080](http://localhost:8080)
+* Frontend -> [http://localhost:5173](http://localhost:5173)
 
 ---
 
 ## Environment Variables (Backend)
 
-| Variable                           | Default | Description                          |
-| ---------------------------------- | ------- | ------------------------------------ |                |
-| `WS_PATH`                          | `/ws`   | WebSocket endpoint path              |
-| `POLL_INTERVAL_MS`                 | `3000`  | Poll cadence for HTTP RPC nodes      |
-| `PER_NODE_BLOCK_CONCURRENCY`       | `5`     | Block-processing workers per node    |
-| `TRACE_CONCURRENCY`                | `10`    | Global trace extraction worker count |
-| `MAX_QUEUE_SIZE`                   | `1000`  | Max queued block or trace tasks      |
-| `MAX_IN_MEMORY_BLOCKS`             | `5000`  | Retained in-memory block window      |
-| `MAX_REQUESTS_PER_SECOND_PER_NODE` | `40`    | Per-node RPC request budget          |
-| `SERVICE_ACCOUNT_JSON_PATH`        | —       | Firebase service account path        |
-| `FIREBASE_DATABASE_URL`            | —       | Firebase RTDB URL                    |
+| Variable | Default | Description |
+| --- | --- | --- |
+| `WS_PATH` | `/ws` | WebSocket endpoint path |
+| `POLL_INTERVAL_MS` | `3000` | Poll cadence for HTTP RPC nodes |
+| `METRICS_LOG_INTERVAL_MS` | `60000` | Interval for logging metrics snapshots |
+| `BROADCAST_WINDOW_MS` | `60000` | Window used when broadcasting live updates |
+| `MAX_IN_MEMORY_BLOCKS` | `5000` | Retained in-memory block window |
+| `LAST_BLOCKS_WINDOW` | `20` | Rolling rollback history per node |
+| `MAX_BATCH_SIZE` | `20` | RPC batch size ceiling |
+| `PER_NODE_BLOCK_CONCURRENCY` | `5` | Block-processing workers per node |
+| `TRACE_CONCURRENCY` | `10` | Global trace extraction worker count |
+| `MAX_QUEUE_SIZE` | `1000` | Max queued block or trace tasks |
+| `MAX_REQUESTS_PER_SECOND_PER_NODE` | `40` | Per-node RPC request budget |
 
 ---
 
