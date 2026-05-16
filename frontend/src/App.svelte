@@ -334,6 +334,10 @@
 
   <BlockModal block={selectedBlock} onClose={() => (selectedBlock = null)} />
   <div id="bottom" class="section-anchor section-anchor-bottom" aria-hidden="true"></div>
+
+  <button class="search-fab" type="button" aria-label="Search">
+    <span class="material-icons-round">search</span>
+  </button>
 </main>
 
 
