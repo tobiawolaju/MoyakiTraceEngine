@@ -9,7 +9,7 @@ Web-based multi-node blockchain indexing engine for Monad mainnet with reorg det
 </p>
 
 <p align="center">
-  <a href="https://monadtraceengine.vercel.app" target="_blank"><strong>Live Demo</strong></a>
+  <a href="https://moyakitraceengine.vercel.app/" target="_blank"><strong>Live Demo</strong></a>
 </p>
 
 ---
@@ -266,6 +266,13 @@ Notes:
 
 * The project does not require a third-party database to start locally.
 * The live indexing data depends on external Monad RPC availability, so the UI can still load even if the chain data is sparse or delayed.
+* If one RPC node is unreachable, the backend now disables that node temporarily instead of crashing.
+
+### Troubleshooting
+
+* If you see `ENOTFOUND` for `node3.monad.xyz`, that node is unavailable from your network or the default endpoint is not resolvable.
+* You can still run the backend and frontend with the remaining nodes.
+* To use your own endpoints, set `MONAD_NODE1`, `MONAD_NODE2`, and `MONAD_NODE3` in the backend environment before starting the app.
 
 ---
 

@@ -42,6 +42,10 @@ export class RpcManager {
       disabledUntil: 0,
       provider: node.rpc.startsWith('ws') ? new WebSocketProvider(node.rpc) : new JsonRpcProvider(node.rpc)
     }));
+
+    for (const node of this.nodes) {
+      this.#attachProviderGuards(node);
+    }
   }
 
   getNodeClients() {
@@ -116,6 +120,24 @@ export class RpcManager {
     const error = new Error(errorPayload?.message || 'RPC error');
     error.code = errorPayload?.code;
     return error;
+  }
+
+  #attachProviderGuards(nodeClient) {
+    const markDisabled = (error) => {
+      const message = error?.message || String(error);
+      this.metrics.rpcErrors += 1;
+      nodeClient.disabledUntil = Date.now() + config.retry.disableNodeMs;
+      console.warn(`[rpc:${nodeClient.nodeId}] provider error: ${message}`);
+    };
+
+    if (typeof nodeClient.provider?.on === 'function') {
+      nodeClient.provider.on('error', markDisabled);
+    }
+
+    const socket = nodeClient.provider?._websocket;
+    if (socket && typeof socket.on === 'function') {
+      socket.on('error', markDisabled);
+    }
   }
 
   close() {
