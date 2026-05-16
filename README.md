@@ -200,6 +200,75 @@ Services:
 
 ---
 
+## Usage
+
+Run the project from the repository root:
+
+```bash
+npm install
+npm run dev
+```
+
+This starts both workspaces:
+
+* Backend: `npm run dev -w backend`
+* Frontend: `npm run dev -w frontend`
+
+What to expect:
+
+* Backend serves the API on `http://localhost:8080`
+* Frontend serves the UI on `http://localhost:5173`
+* The backend keeps its current window in memory, so restarting it clears the retained block history
+
+---
+
+## Local Testing
+
+There is no dedicated automated test suite in the repo yet, so the recommended local validation is a smoke test:
+
+1. Install dependencies with `npm install` from the repo root.
+2. Start both apps with `npm run dev`.
+3. Open `http://localhost:5173` in a browser and confirm the dashboard loads.
+4. Check the backend health endpoint:
+
+```bash
+curl http://localhost:8080/health
+```
+
+5. Check the metrics endpoint:
+
+```bash
+curl http://localhost:8080/metrics
+```
+
+6. Optionally verify data endpoints:
+
+```bash
+curl http://localhost:8080/api/nodes
+curl http://localhost:8080/api/blocks/latest
+```
+
+7. If the Monad RPC endpoints are reachable, you should see live block activity and websocket updates in the frontend.
+
+Backend-only checks:
+
+```bash
+npm run check -w backend
+```
+
+Frontend production build check:
+
+```bash
+npm run build
+```
+
+Notes:
+
+* The project does not require a third-party database to start locally.
+* The live indexing data depends on external Monad RPC availability, so the UI can still load even if the chain data is sparse or delayed.
+
+---
+
 ## Environment Variables (Backend)
 
 | Variable | Default | Description |
