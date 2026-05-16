@@ -72,6 +72,16 @@
   scrollbar-width: none;
 }
 
+:global(*) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+:global(*::-webkit-scrollbar) {
+  width: 0;
+  height: 0;
+}
+
 :global(body)::before {
   content: "";
   position: fixed;
@@ -451,6 +461,16 @@ article p {
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.terminal-table::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar,
+.timeline-scroll::-webkit-scrollbar,
+.modal::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 table {
@@ -665,8 +685,6 @@ tbody tr:hover td {
 .timeline-scroll {
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   min-width: 0;
   max-width: 100%;
 }
@@ -727,6 +745,8 @@ tbody tr:hover td {
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(8, 7, 13, 0.99), rgba(4, 4, 7, 0.99));
   box-shadow: var(--shadow);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .close-btn {
