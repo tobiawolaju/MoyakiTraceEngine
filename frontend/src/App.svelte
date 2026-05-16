@@ -27,9 +27,13 @@
   let activeSection = 'hero';
   let sectionObserver = null;
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-  const wsBase = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080';
+  const localApiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  const localWsBase = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080';
+  const fallbackApiBase = 'https://moyakitraceengine.onrender.com';
+  const fallbackWsBase = 'wss://moyakitraceengine.onrender.com';
   const wsPath = import.meta.env.VITE_WS_PATH || '/ws';
+  let apiBase = localApiBase;
+  let wsBase = localWsBase;
 
   $: liveStateLabel = isPaused ? 'PAUSED' : isFollowingLive ? 'LIVE' : 'REVIEW';
   $: liveStateTone = isPaused ? 'warn' : isFollowingLive ? 'good' : 'muted';
@@ -117,6 +121,27 @@
     }
   }
 
+  async function resolveBackend() {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1200);
+    try {
+      const res = await fetch(`${localApiBase}/api/network/overview`, {
+        signal: controller.signal
+      });
+      if (res.ok) {
+        apiBase = localApiBase;
+        wsBase = localWsBase;
+        return;
+      }
+    } catch {
+      // Local backend is unavailable; fallback to live backend.
+    } finally {
+      clearTimeout(timeout);
+    }
+    apiBase = fallbackApiBase;
+    wsBase = fallbackWsBase;
+  }
+
   function sortBlocks() {
     blocks = [...blocks].sort((a, b) => {
       if (a.status === 'canonical' && b.status !== 'canonical') return -1;
@@ -201,6 +226,7 @@
 
   onMount(async () => {
     shouldReconnect = true;
+    await resolveBackend();
     await loadWindow();
     await loadOverview();
     connectWebSocket();
@@ -339,5 +365,3 @@
     <span class="material-icons-round">search</span>
   </button>
 </main>
-
-
