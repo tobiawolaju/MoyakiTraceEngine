@@ -24,6 +24,8 @@
   let ws = null;
   let shouldReconnect = true;
   let showSplash = true;
+  let activeSection = 'hero';
+  let sectionObserver = null;
 
   const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
   const wsBase = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080';
@@ -33,6 +35,18 @@
   $: liveStateTone = isPaused ? 'warn' : isFollowingLive ? 'good' : 'muted';
   $: nodeCount = nodes.length;
   $: blockCount = blocks.length;
+  const sectionNav = [
+    { id: 'hero', label: 'Hero' },
+    { id: 'overview', label: 'Overview' },
+    { id: 'tape', label: 'Tape' },
+    { id: 'bottom', label: 'Bottom' }
+  ];
+
+  function scrollToSection(id) {
+    activeSection = id;
+    const target = document.getElementById(id);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   function toMsTimestamp(value) {
     const numeric = Number(value);
@@ -190,6 +204,28 @@
     await loadWindow();
     await loadOverview();
     connectWebSocket();
+    sectionObserver = new IntersectionObserver(
+      (entries) => {
+        let bestSection = activeSection;
+        let bestRatio = 0;
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio >= bestRatio) {
+            bestRatio = entry.intersectionRatio;
+            bestSection = entry.target.id;
+          }
+        }
+        if (bestRatio > 0) activeSection = bestSection;
+      },
+      {
+        root: null,
+        threshold: [0.15, 0.3, 0.5, 0.7],
+        rootMargin: '-18% 0px -55% 0px'
+      }
+    );
+    for (const section of sectionNav) {
+      const el = document.getElementById(section.id);
+      if (el) sectionObserver.observe(el);
+    }
     // Tight periodic backfill to smooth out inconsistent WS delivery timing.
     syncTimer = setInterval(() => {
       if (!isPaused && isFollowingLive) loadWindow();
@@ -197,6 +233,7 @@
     overviewTimer = setInterval(loadOverview, 5000);
     return () => {
       shouldReconnect = false;
+      sectionObserver?.disconnect();
       clearTimeout(reconnectTimer);
       clearTimeout(highlightTimer);
       clearInterval(syncTimer);
@@ -211,7 +248,21 @@
 {/if}
 
 <main class="app-shell">
-  <header class="masthead">
+  <nav class="section-rail" aria-label="Page sections">
+    {#each sectionNav as section}
+      <button
+        class="section-dot"
+        class:active={activeSection === section.id}
+        aria-label={`Jump to ${section.label}`}
+        title={section.label}
+        on:click={() => scrollToSection(section.id)}
+      >
+        <span class="section-dot-core"></span>
+      </button>
+    {/each}
+  </nav>
+
+  <header class="masthead" id="hero">
     <div class="masthead-brand">
       <div class="brand-kicker">LIVE TRACE DESK</div>
       <h1>Moyaki Trace Engine</h1>
@@ -221,14 +272,6 @@
     </div>
 
     <div class="masthead-metrics">
-      <div class="masthead-card">
-        <span>API</span>
-        <strong>{apiBase}</strong>
-      </div>
-      <div class="masthead-card">
-        <span>WS</span>
-        <strong>{wsBase}{wsPath}</strong>
-      </div>
       <div class="masthead-card">
         <span>ROWS</span>
         <strong>{blockCount.toLocaleString()}</strong>
@@ -245,9 +288,11 @@
   </header>
 
   <div class="dashboard-grid">
-    <NetworkOverview {overview} {nodes} />
+    <div id="overview">
+      <NetworkOverview {overview} {nodes} />
+    </div>
 
-    <section class="panel desk-panel">
+    <section class="panel desk-panel" id="tape">
       <div class="desk-header">
         <div>
           <p class="eyebrow">Execution tape</p>
@@ -288,6 +333,7 @@
   </div>
 
   <BlockModal block={selectedBlock} onClose={() => (selectedBlock = null)} />
+  <div id="bottom" class="section-anchor section-anchor-bottom" aria-hidden="true"></div>
 </main>
 
 
