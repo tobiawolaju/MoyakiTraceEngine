@@ -12,8 +12,10 @@
 
 <div class="splash-screen">
   <div class="splash-content">
-    <h1 class="splash-logo2">Moyaki</h1>
-    <h1 class="splash-logo">Trace</h1>
-    <h1 class="splash-logo">Engine</h1>
+    <div class="splash-ribbon">LIVE MARKET FEED</div>
+    <h1 class="splash-logo2">MOYAKI</h1>
+    <h1 class="splash-logo">TRACE</h1>
+    <h1 class="splash-logo">ENGINE</h1>
+    <p class="splash-sub">Orderly, compressed, and built for people who want the tape before the story.</p>
   </div>
 </div>

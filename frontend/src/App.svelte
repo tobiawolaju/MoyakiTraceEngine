@@ -29,6 +29,11 @@
   const wsBase = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080';
   const wsPath = import.meta.env.VITE_WS_PATH || '/ws';
 
+  $: liveStateLabel = isPaused ? 'PAUSED' : isFollowingLive ? 'LIVE' : 'REVIEW';
+  $: liveStateTone = isPaused ? 'warn' : isFollowingLive ? 'good' : 'muted';
+  $: nodeCount = nodes.length;
+  $: blockCount = blocks.length;
+
   function toMsTimestamp(value) {
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return 0;
@@ -205,33 +210,83 @@
   <SplashScreen on:finish={() => showSplash = false} />
 {/if}
 
-<main>
-  <NetworkOverview {overview} {nodes} />
-  <ChainGrid
-    blocks={blocks}
-    onSelect={handleSelectBlock}
-    highlightedHashes={highlightedHashes}
-    isPaused={isPaused}
-    isFollowingLive={isFollowingLive}
-    historyLoading={historyLoading}
-    onNeedHistory={loadHistory}
-    onFollowLiveChange={(next) => {
-      isFollowingLive = next;
-      if (next) {
-        historyExhausted = false;
-        loadWindow();
-      }
-    }}
-    onJumpToLive={() => {
-      isFollowingLive = true;
-      historyExhausted = false;
-      loadWindow();
-    }}
-    onTogglePause={() => {
-      isPaused = !isPaused;
-      if (!isPaused && isFollowingLive) loadWindow();
-    }}
-  />
+<main class="app-shell">
+  <header class="masthead">
+    <div class="masthead-brand">
+      <div class="brand-kicker">LIVE TRACE DESK</div>
+      <h1>Moyaki Trace Engine</h1>
+      <p>
+        Real-time blockchain flow, reorg pressure, and node lag in a Bloomberg-style terminal layout.
+      </p>
+    </div>
+
+    <div class="masthead-metrics">
+      <div class="masthead-card">
+        <span>API</span>
+        <strong>{apiBase}</strong>
+      </div>
+      <div class="masthead-card">
+        <span>WS</span>
+        <strong>{wsBase}{wsPath}</strong>
+      </div>
+      <div class="masthead-card">
+        <span>ROWS</span>
+        <strong>{blockCount.toLocaleString()}</strong>
+      </div>
+      <div class="masthead-card">
+        <span>STATE</span>
+        <strong class={`tone-${liveStateTone}`}>{liveStateLabel}</strong>
+      </div>
+      <div class="masthead-card">
+        <span>NODES</span>
+        <strong>{nodeCount || '0'}</strong>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    <NetworkOverview {overview} {nodes} />
+
+    <section class="panel desk-panel">
+      <div class="desk-header">
+        <div>
+          <p class="eyebrow">Execution tape</p>
+          <h2>Block flow by node</h2>
+        </div>
+        <div class="desk-context">
+          <span class={`status-chip ${liveStateTone}`}>{liveStateLabel}</span>
+          <span class="status-chip muted">{blockCount.toLocaleString()} blocks tracked</span>
+        </div>
+      </div>
+
+      <ChainGrid
+        blocks={blocks}
+        onSelect={handleSelectBlock}
+        highlightedHashes={highlightedHashes}
+        isPaused={isPaused}
+        isFollowingLive={isFollowingLive}
+        historyLoading={historyLoading}
+        onNeedHistory={loadHistory}
+        onFollowLiveChange={(next) => {
+          isFollowingLive = next;
+          if (next) {
+            historyExhausted = false;
+            loadWindow();
+          }
+        }}
+        onJumpToLive={() => {
+          isFollowingLive = true;
+          historyExhausted = false;
+          loadWindow();
+        }}
+        onTogglePause={() => {
+          isPaused = !isPaused;
+          if (!isPaused && isFollowingLive) loadWindow();
+        }}
+      />
+    </section>
+  </div>
+
   <BlockModal block={selectedBlock} onClose={() => (selectedBlock = null)} />
 </main>
 

@@ -16,7 +16,7 @@
   export let onJumpToLive = () => {};
 
   const statusColors = {
-    canonical: "#22c55e",
+    canonical: "#b06cff",
     pending: "#facc15",
     "rolled-back": "#f97316",
   };
@@ -85,7 +85,19 @@
     }
   }
 
-  $: nodeIds = [...new Set(blocks.map((b) => b.nodeId))].sort(nodeSort);
+  $: blocksByNode = (() => {
+    const map = new Map();
+    for (const block of blocks) {
+      const list = map.get(block.nodeId);
+      if (list) list.push(block);
+      else map.set(block.nodeId, [block]);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => a.timestamp - b.timestamp);
+    }
+    return map;
+  })();
+  $: nodeIds = [...blocksByNode.keys()].sort(nodeSort);
   $: highlightedSet = new Set(highlightedHashes);
   $: isMobileLayout = viewportWidth <= 760;
   $: rowHeight = isMobileLayout ? 82 : 96;
@@ -119,7 +131,7 @@
       beforeDraw: (chart) => {
         const { ctx, width, height } = chart;
         ctx.save();
-        ctx.fillStyle = "#09090b";
+        ctx.fillStyle = "#040308";
         ctx.fillRect(0, 0, width, height);
         ctx.restore();
       },
@@ -152,7 +164,7 @@
             reverse: true,
             ticks: { display: false },
             grid: {
-              color: "rgba(168, 85, 247, 0.15)",
+              color: "rgba(176, 108, 255, 0.18)",
               drawBorder: false,
               lineWidth: 1,
             },
@@ -161,10 +173,10 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: "rgba(9, 9, 11, 0.95)",
-            titleColor: "#a855f7",
-            bodyColor: "#ffffff",
-            borderColor: "rgba(168, 85, 247, 0.3)",
+            backgroundColor: "rgba(3, 3, 6, 0.98)",
+            titleColor: "#d1b0ff",
+            bodyColor: "#f5f2e8",
+            borderColor: "rgba(176, 108, 255, 0.4)",
             borderWidth: 1,
             padding: 12,
             cornerRadius: 10,
@@ -206,7 +218,7 @@
     const datasets = [];
 
     nodeIds.forEach((nodeId, nodeIdx) => {
-      const nodeBlocks = blocks.filter(b => b.nodeId === nodeId).sort((a,b) => a.timestamp - b.timestamp);
+      const nodeBlocks = blocksByNode.get(nodeId) || [];
       
       // We use "floating" bars: [y_start, y_end]
       // y_start = nodeIdx - (magnitude_scaled / 2)
@@ -225,7 +237,7 @@
           };
         }),
         backgroundColor: nodeBlocks.map(b => colorFor(b.status)),
-        borderColor: nodeBlocks.map(b => highlightedSet.has(`${b.nodeId}:${b.hash}`) ? '#ffffff' : 'rgba(255,255,255,0.1)'),
+        borderColor: nodeBlocks.map(b => highlightedSet.has(`${b.nodeId}:${b.hash}`) ? '#f5f2e8' : 'rgba(176,108,255,0.16)'),
         borderWidth: nodeBlocks.map(b => highlightedSet.has(`${b.nodeId}:${b.hash}`) ? 2 : 1),
         barThickness: isMobileLayout ? 12 : 20,
         borderRadius: 4
@@ -266,59 +278,63 @@
   });
 </script>
 
-<div class="legend">
-  <span><i class="dot canonical"></i>Canonical</span>
-  <span><i class="dot pending"></i>Pending</span>
-  <span><i class="dot rolled-back"></i>Rolled Back</span>
-  <div class="legend-controls">
-    <button
-      class="live-btn"
-      on:click={onTogglePause}
-      aria-label={isPaused ? "Play live updates" : "Pause live updates"}
-      title={isPaused ? "Play" : "Pause"}
-    >
-      {#if isPaused}
-        &#9654;
-      {:else}
-        &#10074;&#10074;
-      {/if}
-    </button>
-    <button
-      class="live-btn jump-btn"
-      on:click={() => {
-        nowMs = Date.now();
-        onFollowLiveChange(true);
-        onJumpToLive();
-        tick().then(jumpToLiveEdge);
-      }}
-      disabled={isFollowingLive}
-      aria-label="Jump to live"
-      title="Jump to live"
-    >
-      Jump to Live
-    </button>
-  </div>
-</div>
-
-<div class="board">
-  <div class="left-column">
-    <div class="corner">Nodes</div>
-    {#each nodeIds as nodeId}
-      <div class="node-label" style="height: {rowHeight}px">{nodeId}</div>
-    {/each}
+<div class="timeline-shell">
+  <div class="legend">
+    <div class="legend-row">
+      <span><i class="dot canonical"></i>Canonical</span>
+      <span><i class="dot pending"></i>Pending</span>
+      <span><i class="dot rolled-back"></i>Rolled Back</span>
+    </div>
+    <div class="legend-controls">
+      <button
+        class="live-btn"
+        on:click={onTogglePause}
+        aria-label={isPaused ? "Play live updates" : "Pause live updates"}
+        title={isPaused ? "Play" : "Pause"}
+      >
+        {#if isPaused}
+          &#9654;
+        {:else}
+          &#10074;&#10074;
+        {/if}
+      </button>
+      <button
+        class="live-btn jump-btn"
+        on:click={() => {
+          nowMs = Date.now();
+          onFollowLiveChange(true);
+          onJumpToLive();
+          tick().then(jumpToLiveEdge);
+        }}
+        disabled={isFollowingLive}
+        aria-label="Jump to live"
+        title="Jump to live"
+      >
+        Jump to Live
+      </button>
+    </div>
   </div>
 
-  <div class="timeline-scroll" bind:this={scroller} on:scroll={handleScroll}>
-    <div class="timeline-header" style={`width:${timelineWidth}px`}>
-      {#each ticks as t}
-        <div class="tick" style={`left:${toX(t)}px`}>
-          <span>{ago(t, nowMs)}</span>
-        </div>
+  <div class="board">
+    <div class="left-column">
+      <div class="corner">Nodes</div>
+      {#each nodeIds as nodeId}
+        <div class="node-label" style="height: {rowHeight}px"><span>{nodeId}</span></div>
       {/each}
     </div>
 
-    <div class="chart-container" style="width: {timelineWidth}px; height: {nodeIds.length * rowHeight}px; position: relative;">
-      <canvas bind:this={chartCanvas} width={timelineWidth} height={nodeIds.length * rowHeight}></canvas>
+    <div class="timeline-scroll" bind:this={scroller} on:scroll={handleScroll}>
+      <div class="timeline-header" style={`width:${timelineWidth}px`}>
+        {#each ticks as t}
+          <div class="tick" style={`left:${toX(t)}px`}>
+            <span>{ago(t, nowMs)}</span>
+          </div>
+        {/each}
+      </div>
+
+      <div class="chart-container" style="width: {timelineWidth}px; height: {nodeIds.length * rowHeight}px; position: relative;">
+        <canvas bind:this={chartCanvas} width={timelineWidth} height={nodeIds.length * rowHeight}></canvas>
+      </div>
     </div>
   </div>
 </div>

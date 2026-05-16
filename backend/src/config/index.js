@@ -2,14 +2,22 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+function parsePort(value, fallback) {
+  const parsed = Number(value ?? fallback);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+    return fallback;
+  }
+  return parsed;
+}
+
 const defaultNodes = [
-  { nodeId: 'Node1', rpc: process.env.MONAD_NODE1 || 'https://node1.monad.xyz:8545' },
-  { nodeId: 'Node2', rpc: process.env.MONAD_NODE2 || 'https://node2.monad.xyz:8545' },
-  { nodeId: 'Node3', rpc: process.env.MONAD_NODE3 || 'wss://node3.monad.xyz:8546' }
-];
+  { nodeId: 'Node1', rpc: process.env.MONAD_NODE1 || '' },
+  { nodeId: 'Node2', rpc: process.env.MONAD_NODE2 || '' },
+  { nodeId: 'Node3', rpc: process.env.MONAD_NODE3 || '' }
+].filter((node) => node.rpc);
 
 export const config = {
-  port: 8080,
+  port: parsePort(process.env.PORT, 8080),
   wsPath: process.env.WS_PATH || '/ws',
   metricsLogIntervalMs: Number(process.env.METRICS_LOG_INTERVAL_MS || 60_000),
   broadcastWindowMs: Number(process.env.BROADCAST_WINDOW_MS || 60_000),

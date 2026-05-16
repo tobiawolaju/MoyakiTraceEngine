@@ -157,6 +157,23 @@ async function bootstrap() {
     }
   });
 
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          event: 'server.port_in_use',
+          port: config.port,
+          message: `Port ${config.port} is already in use. Stop the existing process or set PORT to another value.`
+        })
+      );
+      process.exit(1);
+    }
+
+    console.error(JSON.stringify({ level: 'error', event: 'server.listen.error', message: error.message }));
+    process.exit(1);
+  });
+
   server.listen(config.port, () => {
     log('server.ready', { url: `http://localhost:${config.port}` });
   });
