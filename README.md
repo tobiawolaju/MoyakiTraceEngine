@@ -2,7 +2,7 @@
   <img src="logo (20260516083815).png" height="120"/>
 </p>
 
-<h1 align="center">MoyakiTraceEngine</h1>
+<h1 align="center">Moyaki Trace Engine</h1>
 
 <p align="center">
 Web-based multi-node blockchain indexing engine for Monad mainnet with reorg detection, rate-limit resilience, and real-time execution trace streaming.
@@ -12,7 +12,7 @@ Web-based multi-node blockchain indexing engine for Monad mainnet with reorg det
 
 ## Overview
 
-MoyakiTraceEngine is a blockchain ingestion and trace-streaming project for Monad RPC endpoints.
+Moyaki Trace Engine is a blockchain ingestion and trace-streaming project for Monad RPC endpoints.
 
 It ingests blocks from multiple nodes, detects consensus divergence, handles reorg rollbacks, extracts execution traces, and streams normalized data to a live dashboard.
 
@@ -30,17 +30,6 @@ The backend keeps its working state and historical window in memory, so it does 
 - Real-time WebSocket streaming architecture
 - Rolling in-memory block and transaction state
 - Modular backend system design
-
----
-
-## Screenshots
-
-<div style="display:flex; overflow-x:auto; gap:12px; padding:10px 0; white-space: nowrap;">
-  <img src="./screenshots/2.jpg" height="260"/>
-  <img src="./screenshots/3.jpg" height="260"/>
-  <img src="./screenshots/4.jpg" height="260"/>
-  <img src="./screenshots/5.jpg" height="260"/>
-</div>
 
 ---
 
@@ -207,17 +196,6 @@ Note:
 * Copy `backend/sample.env` to `backend/.env` and set your Monad RPC URLs before starting the backend.
 * Copy `frontend/sample.env` to `frontend/.env` if you want to override the local API or WebSocket URLs.
 
----
-
-## Usage
-
-Run the project from the repository root:
-
-```bash
-npm install
-npm run dev
-```
-
 This starts both workspaces:
 
 * Backend: `npm run dev -w backend`
@@ -260,13 +238,13 @@ curl http://localhost:8080/api/blocks/latest
 
 7. If the Monad RPC endpoints are reachable, you should see live block activity and websocket updates in the frontend.
 
-Backend-only checks:
+Backend checks:
 
 ```bash
 npm run check -w backend
 ```
 
-Frontend production build check:
+Frontend build check:
 
 ```bash
 npm run build
@@ -304,9 +282,9 @@ Notes:
 
 ---
 
-## Engineering Focus
+## Design Notes
 
-This project prioritizes:
+The project prioritizes:
 
 * Reliability over raw throughput
 * Observability over abstraction
