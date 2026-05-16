@@ -68,18 +68,24 @@
   height: 0;
 }
 
-:global(body) {
-  scrollbar-width: none;
-}
-
+:global(html),
+:global(body),
 :global(*) {
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
   -ms-overflow-style: none;
 }
 
 :global(*::-webkit-scrollbar) {
-  width: 0;
-  height: 0;
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+:global(*::-webkit-scrollbar-thumb),
+:global(*::-webkit-scrollbar-track) {
+  background: transparent;
+  border: 0;
 }
 
 :global(body)::before {
