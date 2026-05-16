@@ -1,15 +1,11 @@
 <p align="center">
-  <img src="./screenshots/logo.png" height="120"/>
+  <img src="logo (20260516083815).png" height="120"/>
 </p>
 
 <h1 align="center">MoyakiTraceEngine</h1>
 
 <p align="center">
 Web-based multi-node blockchain indexing engine for Monad mainnet with reorg detection, rate-limit resilience, and real-time execution trace streaming.
-</p>
-
-<p align="center">
-  <a href="https://moyakitraceengine.vercel.app/" target="_blank"><strong>Live Demo</strong></a>
 </p>
 
 ---
