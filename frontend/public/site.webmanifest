@@ -1,0 +1,18 @@
+{
+  "name": "Moyaki Trace Engine",
+  "short_name": "Moyaki Trace",
+  "description": "Web-based multi-node blockchain indexing engine for Monad mainnet.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#05050a",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "1248x1248",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
